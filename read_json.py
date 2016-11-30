@@ -15,7 +15,7 @@ def preprocessImg(img):
     img = cv2.GaussianBlur(img, (9, 9), 0, 0.0, 4)
     scaleFactor = IMAGE_HEIGHT / (height)
     n_width = scaleFactor * width
-    img = cv2.resize(img, (int(n_width), int(IMAGE_HEIGHT)))
+    # img = cv2.resize(img, (int(n_width), int(IMAGE_HEIGHT)))
     return img
 def applyFilter():
     kernel_size, sig, th, lm, gm, ps = 13, 1, 0, 1.0, 0.02, 0
@@ -95,6 +95,9 @@ def formFeatures(img):
     # b = np.array([[5, 6], [7, 8]])
     # c = np.array([[9, 10], [11, 12]])
     # x = np.dstack((a, b, c))
+    # np.reshape(x, 12, order='F')
+    # array([1, 3, 2, 4, 5, 7, 6, 8, 9, 11, 10, 12])
+
     # print (np.concatenate((dest0, dest45), axis=2)).shape
     # print dest0.shape
     # print dest45.shape
@@ -102,17 +105,42 @@ def formFeatures(img):
     # print dest135.shape
     return feature_set
 
+def fetch_samples(feature_set, samples):
+    X = np.array([])
+    for s in samples:
+        cropped = feature_set[s['y']:s['y']+s['height'], s['x']:s['x']+s['width'],:]
+
+        img = cv2.resize(cropped, (28, 28), 0, 0, cv2.INTER_AREA)
+        featureVector = np.transpose(np.reshape(img, 28*28*4, order='F'))
+        print featureVector.shape
+        X = np.append(X, featureVector, axis=0)
+        # a = np.array([[1, 2], [3, 4]])
+        # b = np.array([[5, 6], [7, 8]])
+        # c = np.array([[9, 10], [11, 12]])
+        # x = np.dstack((a, b, c))
+        # np.reshape(x, 12, order='F')
+        # array([1, 3, 2, 4, 5, 7, 6, 8, 9, 11, 10, 12])
+        break
+    print len(samples)
+    print X.shape
+    # cv2.imshow('image', img[:,:,3])
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    exit()
 
 def processing(fL, path, samples):
-    # for s in samples:
-    #     print(s)
-    #
-    # exit()
+    # print path
     img = cv2.imread(fL + path, cv2.CV_8UC1)
     img = preprocessImg(img)
-
+    # print img.shape
     feature_set = formFeatures(img)
+
+
+    fetch_samples(feature_set, samples)
     exit()
+    cv2.imshow('image', feature_set[:, :, 0:3])
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     img = extractFeatures(img)
 
     # original = img.copy()
@@ -120,12 +148,10 @@ def processing(fL, path, samples):
 
     # img = cv2.resize(img, None, fx=0.75, fy=0.75)
 
-    print img.dtype
+    # print img.dtype
     exit()
     # cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-    cv2.imshow('image', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+
 
 
 folderLocation = "./data/"
