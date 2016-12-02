@@ -150,6 +150,7 @@ def processing(fL, data):
     X_complete = None
     Y_complete = None
     for d in data:
+        # break
         path = d["filePath"]
         samples = d["samples"]
         print path
@@ -168,9 +169,11 @@ def processing(fL, data):
             X_complete = np.concatenate((X_complete, X), axis=0)
             Y_complete = np.concatenate((Y_complete, Y), axis=0)
 
+        # i+=1
+        # if i>10:
+        #     break
 
-
-
+    #
     print '*****************'
     print X_complete.shape
     print Y_complete.shape
@@ -178,10 +181,11 @@ def processing(fL, data):
     myDict = {}
     myDict['Xtrain'] = X_complete
     myDict['Ytrain'] = Y_complete
-    np.save('/trainingData.npy', myDict)
-    dd = np.load('/trainingData.npy', myDict)
-    print dd['Xtrain'].shape
-    print dd['Ytrain'].shape
+    np.save('./trainingData.npy', myDict)
+    dd = np.load('./trainingData.npy')
+    # print type(dd.item())
+    print dd.item()['Xtrain'].shape
+    print dd.item()['Ytrain'].shape
     exit()
     # exit()
     # cv2.imshow('image', feature_set[:, :, 0:3])
