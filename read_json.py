@@ -18,20 +18,6 @@ def preprocessImg(img):
     n_width = scaleFactor * width
     # img = cv2.resize(img, (int(n_width), int(IMAGE_HEIGHT)))
     return img
-def applyFilter():
-    kernel_size, sig, th, lm, gm, ps = 13, 1, 0, 1.0, 0.02, 0
-    kernel0 = cv2.getGaborKernel((kernel_size, kernel_size), sig, th, lm, gm, ps)
-    kernel45 = cv2.warpAffine(kernel0, cv2.getRotationMatrix2D((kernel_size / 2., kernel_size / 2.), 45, 1.),
-                              (kernel_size, kernel_size))
-    kernel90 = cv2.warpAffine(kernel0, cv2.getRotationMatrix2D((kernel_size / 2., kernel_size / 2.), 90, 1.),
-                              (kernel_size, kernel_size))
-    kernel135 = cv2.warpAffine(kernel0, cv2.getRotationMatrix2D((kernel_size / 2., kernel_size / 2.), 135, 1.),
-                               (kernel_size, kernel_size))
-
-    dest0 = cv2.filter2D(src_f, cv2.CV_32F, kernel0)
-    dest45 = cv2.filter2D(src_f, cv2.CV_32F, kernel45)
-    dest90 = cv2.filter2D(src_f, cv2.CV_32F, kernel90)
-    dest135 = cv2.filter2D(src_f, cv2.CV_32F, kernel135)
 
 def extractFeatures(img):
     img = cv2.resize(img, (28,28),0,0, cv2.INTER_AREA)
@@ -90,8 +76,19 @@ def formFeatures(img):
     dest45 = cv2.filter2D(src_f, cv2.CV_32F, kernel45)
     dest90 = cv2.filter2D(src_f, cv2.CV_32F, kernel90)
     dest135 = cv2.filter2D(src_f, cv2.CV_32F, kernel135)
-    feature_set = np.dstack((dest0, dest45, dest90, dest135))
 
+    scaling_factor = 1./255
+    dest0 = np.uint8(dest0) * scaling_factor
+    dest45 = np.uint8(dest45) * scaling_factor
+    dest90 = np.uint8(dest90) * scaling_factor
+    dest135 = np.uint8(dest135) * scaling_factor
+
+    feature_set = np.dstack((dest0, dest45, dest90, dest135))
+    #
+    # cv2.imshow('image', feature_set[:, :, 3])
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    # exit()
     # a = np.array([[1, 2], [3, 4]])
     # b = np.array([[5, 6], [7, 8]])
     # c = np.array([[9, 10], [11, 12]])
@@ -171,9 +168,6 @@ def processing(fL, data):
             X_complete = np.concatenate((X_complete, X), axis=0)
             Y_complete = np.concatenate((Y_complete, Y), axis=0)
 
-        if i > 2:
-            break
-        i += 1
 
 
 
@@ -181,6 +175,13 @@ def processing(fL, data):
     print X_complete.shape
     print Y_complete.shape
 
+    myDict = {}
+    myDict['Xtrain'] = X_complete
+    myDict['Ytrain'] = Y_complete
+    np.save('/trainingData.npy', myDict)
+    dd = np.load('/trainingData.npy', myDict)
+    print dd['Xtrain'].shape
+    print dd['Ytrain'].shape
     exit()
     # exit()
     # cv2.imshow('image', feature_set[:, :, 0:3])
