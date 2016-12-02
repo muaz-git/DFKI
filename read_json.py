@@ -1,7 +1,8 @@
 import json
 import numpy as np
 import cv2
-import pprint
+import scipy
+from sklearn.svm import SVC
 IMAGE_HEIGHT = 998.0
 
 def preprocessImg(img):
@@ -106,51 +107,96 @@ def formFeatures(img):
     return feature_set
 
 def fetch_samples(feature_set, samples):
+    class_1 = 'EPC_EVENT'
+    # class_1 = 'EPC_EVENT'
+
     X = np.array([])
+    scale_size = 28
+    tot_layers = np.size(feature_set,axis=2)
+    tot_dimensions = scale_size * scale_size * tot_layers
+
+    # print 'Total dimensions = '+str(tot_dimensions)
+    X = np.empty((0,tot_dimensions), feature_set.dtype)
+    Y = []
+
+
+
     for s in samples:
+        label = 0
         cropped = feature_set[s['y']:s['y']+s['height'], s['x']:s['x']+s['width'],:]
 
         img = cv2.resize(cropped, (28, 28), 0, 0, cv2.INTER_AREA)
-        featureVector = np.transpose(np.reshape(img, 28*28*4, order='F'))
-        print featureVector.shape
-        X = np.append(X, featureVector, axis=0)
-        # a = np.array([[1, 2], [3, 4]])
-        # b = np.array([[5, 6], [7, 8]])
-        # c = np.array([[9, 10], [11, 12]])
-        # x = np.dstack((a, b, c))
-        # np.reshape(x, 12, order='F')
-        # array([1, 3, 2, 4, 5, 7, 6, 8, 9, 11, 10, 12])
-        break
-    print len(samples)
+        X = np.append(X, np.array([np.reshape(img, tot_dimensions, order='F')]), axis=0)
+
+        if s['objectType'] == class_1:
+            label = 1
+
+        Y.append(label)
+
+    # print len(samples)
     print X.shape
+    print len(Y)
     # cv2.imshow('image', img[:,:,3])
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
+    # print X.shape
+    # print np.array(Y).shape
+    return X, np.array(Y)
+    # exit()
+
+def applyML(Xtrain, Ytrain, Xtest, Ytest):
+    clf = SVC()
+    clf.fit(Xtrain, Ytrain)
+
+def processing(fL, data):
+    i = 1
+    X_complete = None
+    Y_complete = None
+    for d in data:
+        path = d["filePath"]
+        samples = d["samples"]
+        print path
+
+        img = cv2.imread(fL + path, cv2.CV_8UC1)
+
+        img = preprocessImg(img)
+
+        feature_set = formFeatures(img)
+        X, Y = fetch_samples(feature_set, samples)
+
+        if X_complete is None:
+            X_complete = X
+            Y_complete = Y
+        else:
+            X_complete = np.concatenate((X_complete, X), axis=0)
+            Y_complete = np.concatenate((Y_complete, Y), axis=0)
+
+        if i > 2:
+            break
+        i += 1
+
+
+
+    print '*****************'
+    print X_complete.shape
+    print Y_complete.shape
+
     exit()
-
-def processing(fL, path, samples):
-    # print path
-    img = cv2.imread(fL + path, cv2.CV_8UC1)
-    img = preprocessImg(img)
-    # print img.shape
-    feature_set = formFeatures(img)
-
-
-    fetch_samples(feature_set, samples)
-    exit()
-    cv2.imshow('image', feature_set[:, :, 0:3])
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    img = extractFeatures(img)
-
-    # original = img.copy()
-    # original = cv2.bitwise_not(original)
-
-    # img = cv2.resize(img, None, fx=0.75, fy=0.75)
-
-    # print img.dtype
-    exit()
-    # cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+    # exit()
+    # cv2.imshow('image', feature_set[:, :, 0:3])
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    # img = extractFeatures(img)
+    #
+    # # original = img.copy()
+    # # original = cv2.bitwise_not(original)
+    #
+    # # img = cv2.resize(img, None, fx=0.75, fy=0.75)
+    #
+    # # print img.dtype
+    # return
+    # exit()
+    # # cv2.namedWindow('image', cv2.WINDOW_NORMAL)
 
 
 
@@ -158,8 +204,13 @@ folderLocation = "./data/"
 with open(folderLocation+'positives.json') as data_file:
     data = json.load(data_file)
 
-fP = data[0]["filePath"]
-samples = data[0]["samples"]
-processing(folderLocation, fP, samples)
+
+processing(folderLocation, data)
+
+
+
+# fP = data[0]["filePath"]
+# samples = data[0]["samples"]
+# processing(folderLocation, fP, samples)
 
 
